@@ -39,14 +39,7 @@ def get_etf_prices(ticker_symbol):
         print(f"An error occurred while fetching data for {ticker_symbol}: {e}")
         return None, None
 
-def send_simple_message(tickers,alerts):
-  subject = "Watch out"
-  text = ""
-  for ticker in tickers:
-    subject = subject + " " + ticker
-  for alert in alerts:
-    drop_pct = (1.0 - alert[1] / alert[2]) * 100
-    text = text + f"{alert[0]}: Current Price: ${alert[1]:.2f} Historical High: {alert[2]:.2f}, dropped {drop_pct:.2f}%, which is below threshold {alert[3]*100:.2f}%."
+def send_message(subject,text):
   return requests.post(
     "https://api.mailgun.net/v3/sandboxe8cddc1d54854e26a7aba3550e8daa0d.mailgun.org/messages",
     auth=("api", os.getenv('API_KEY', '2b13d4fd874e1bf7f8b78ade03fbe62f-3c134029-19ae4db8')),
@@ -54,6 +47,16 @@ def send_simple_message(tickers,alerts):
     "to": "Harvey H <hza8816415@gmail.com>",
       "subject": subject,
       "text": text})
+
+def send_alerts(tickers,alerts):
+  subject = "Watch out"
+  text = ""
+  for ticker in tickers:
+    subject = subject + " " + ticker
+  for alert in alerts:
+    drop_pct = (1.0 - alert[1] / alert[2]) * 100
+    text = text + f"{alert[0]}: Current Price: ${alert[1]:.2f} Historical High: {alert[2]:.2f}, dropped {drop_pct:.2f}%, which is below threshold {alert[3]*100:.2f}%. \n"
+  return send_message(subject,text)
 
 def compare_current_with_high(etf_ticker_symbol, threshold):
     current_price, historical_high = get_etf_prices(etf_ticker_symbol)
@@ -76,20 +79,59 @@ def is_trading_day():
     # Check if today is a business day according to the US trading calendar
     return bool(len(pd.date_range(start=today, end=today, freq=us_bd)))
 
+def is_last_trading_day_of_month(market='NYSE'):
+    """
+    Checks if today is the last trading day of the month for the specified market.
+    """
+    today = datetime.date.today()
+    
+    # Get the calendar for the specified market
+    calendar = mcal.get_calendar(market)
+    
+    # Get all trading days for the current month
+    # We need to specify a range that definitely includes the whole month
+    start_of_month = today.replace(day=1)
+    # Go slightly into next month to ensure we catch the last day
+    end_of_month = (start_of_month + datetime.timedelta(days=32)).replace(day=1) - datetime.timedelta(days=1)
+    
+    schedule = calendar.schedule(start_date=start_of_month, end_date=end_of_month)
+    
+    if schedule.empty:
+        return False, None # No trading days found in the month
+        
+    # Get the last trading day from the schedule
+    last_trading_day_of_month = schedule.index[-1].date()
+    
+    print(f"Today: {today}, Last Trading Day of Month ({market}): {last_trading_day_of_month}")
+
+    current_utc_time = datetime.datetime.now(timezone.utc)
+    target_utc_hour = 11 # 11 AM UTC
+    
+    return today == last_trading_day_of_month and current_utc_time.hour < target_utc_hour
     
 symbols = ["VOO", "VGT", "MGK"]
 thresholds = [0.95, 0.9483, 0.9407]
 should_send = False
 tickers = []
 alerts = []
+currents = []
+highs = []
 
 if is_trading_day():
     for i in range(len(symbols)):
       result, current, hist_high = compare_current_with_high(symbols[i], thresholds[i])
+      currents.append(current)
+      highs.append(hist_high)
       if result:
         should_send = True
         tickers.append(symbols[i])
         alerts.append((symbols[i], current, hist_high, thresholds[i]))
     
     if should_send:
-      send_simple_message(tickers,alerts)
+      send_alerts(tickers,alerts)
+    elif is_last_trading_day_of_month():
+        subject = "Monthly Summary"
+        text = ""
+        for i in range(len(symbols)):
+            text = text + f"{tickers[i]} Current price ${currents[i]:.2f} historical high ${highs[i]:.2f}. \n"
+        send_message(subject,text)
