@@ -1,5 +1,10 @@
 import yfinance as yf
 import pandas as pd
+import os
+import requests
+from pandas.tseries.holiday import USFederalHolidayCalendar
+from pandas.tseries.offsets import CustomBusinessDay
+import datetime as dt
 
 def get_etf_prices(ticker_symbol):
     """
@@ -12,15 +17,15 @@ def get_etf_prices(ticker_symbol):
         # Method 1: Get data from the 'info' dictionary for the most recent price
         # 'currentPrice' or 'regularMarketPrice' are options
         current_price = etf_ticker.info.get('currentPrice')
-        
+
         # Method 2: Download the entire history to find the all-time high
         # period='max' fetches all available historical data
         hist_data = etf_ticker.history(period="max")
-        
+
         if hist_data.empty:
             print(f"No historical data found for {ticker_symbol}.")
             return None, None
-            
+
         historical_high = hist_data['High'].max()
 
         if current_price is None:
@@ -34,25 +39,57 @@ def get_etf_prices(ticker_symbol):
         print(f"An error occurred while fetching data for {ticker_symbol}: {e}")
         return None, None
 
-# Specify the ETF ticker
-etf_ticker_symbol = "VOO"
-# TODO: update to symbol + threshold.
+def send_simple_message(tickers,alerts):
+  subject = "Watch out"
+  text = ""
+  for ticker in tickers:
+    subject = subject + " " + ticker
+  for alert in alerts:
+    drop_pct = (1.0 - alert[1] / alert[2]) * 100
+    text = text + f"{alert[0]}: Current Price: ${alert[1]:.2f} Historical High: {alert[2]:.2f}, dropped {drop_pct:.2f}%, which is below threshold {alert[3]*100:.2f}%."
+  return requests.post(
+    "https://api.mailgun.net/v3/sandboxe8cddc1d54854e26a7aba3550e8daa0d.mailgun.org/messages",
+    auth=("api", os.getenv('API_KEY', '2b13d4fd874e1bf7f8b78ade03fbe62f-3c134029-19ae4db8')),
+    data={"from": "Mailgun Sandbox <postmaster@sandboxe8cddc1d54854e26a7aba3550e8daa0d.mailgun.org>",
+    "to": "Harvey H <hza8816415@gmail.com>",
+      "subject": subject,
+      "text": text})
 
-# Get the prices
-current_price_voo, historical_high_voo = get_etf_prices(etf_ticker_symbol)
+def compare_current_with_high(etf_ticker_symbol, threshold):
+    current_price, historical_high = get_etf_prices(etf_ticker_symbol)
+    if current_price is not None and historical_high is not None:
+      if current_price < threshold * historical_high:
+        return True, current_price, historical_high
+    return False, None, None
 
-# Print the results
-# TODO email results (and when necessary).
-if current_price_voo is not None and historical_high_voo is not None:
-    print(f"Current price for {etf_ticker_symbol}: ${current_price_voo:.2f}")
-    print(f"Historical high for {etf_ticker_symbol}: ${historical_high_voo:.2f}")
+
+def is_trading_day():
+    """
+    Checks if today is a trading day (market open) in the US.
+    """
+    # Define US trading days (weekdays excluding US federal holidays)
+    us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
+
+    # Get today's date
+    today = dt.date.today()
+
+    # Check if today is a business day according to the US trading calendar
+    return bool(len(pd.date_range(start=today, end=today, freq=us_bd)))
+
     
-    # Calculate the 95% threshold
-    threshold = historical_high_voo * 0.95
-    print(f"95% of historical high: ${threshold:.2f}")
+symbols = ["VOO", "VGT", "MGK"]
+thresholds = [0.95, 0.9483, 0.9407]
+should_send = False
+tickers = []
+alerts = []
 
-    if current_price_voo < threshold:
-        print(f"\nALERT: VOO's price is below 95% of its historical high!")
-    else:
-        print("\nVOO's price is above the 95% threshold.")
-
+if is_trading_day():
+    for i in range(len(symbols)):
+      result, current, hist_high = compare_current_with_high(symbols[i], thresholds[i])
+      if result:
+        should_send = True
+        tickers.append(symbols[i])
+        alerts.append((symbols[i], current, hist_high, thresholds[i]))
+    
+    if should_send:
+      send_simple_message(tickers,alerts)
