@@ -66,7 +66,7 @@ def compare_current_with_high(etf_ticker_symbol, threshold):
     if current_price is not None and historical_high is not None:
       if current_price < threshold * historical_high:
         return True, current_price, historical_high
-    return False, None, None
+    return False, current_price, historical_high
 
 
 def is_trading_day():
@@ -137,8 +137,9 @@ if is_trading_day():
     if should_send:
       send_alerts(tickers,alerts)
     elif is_last_trading_day_of_month():
-        subject = "Monthly Summary"
+        subject = "Monthly Summary " + str(datetime.date.today())
         text = ""
         for i in range(len(symbols)):
-            text = text + f"{tickers[i]} Current price ${currents[i]:.2f} historical high ${highs[i]:.2f}. \n"
+            diff_now = (1.0 - currents[i] / highs[i]) * 100
+            text = text + symbols[i] + f" Current price ${currents[i]:.2f} historical high ${highs[i]:.2f}. drop {diff_now:.2f}%\n"
         send_message(subject,text)
