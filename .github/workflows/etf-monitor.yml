@@ -46,4 +46,4 @@ jobs:
           pip install requests -r .github/requirements.txt 
       
       - name: Run ETF monitor script
-        run: python .github/etf-monitor.py.py
+        run: python etf-monitor.py.py
