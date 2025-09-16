@@ -47,7 +47,7 @@ def send_message(subject,text):
     "https://api.mailgun.net/v3/sandboxe8cddc1d54854e26a7aba3550e8daa0d.mailgun.org/messages",
     auth=("api", os.getenv('API_KEY', '2b13d4fd874e1bf7f8b78ade03fbe62f-3c134029-19ae4db8')),
     data={"from": "Mailgun Sandbox <postmaster@sandboxe8cddc1d54854e26a7aba3550e8daa0d.mailgun.org>",
-    "to": "Harvey H <hza8816415@gmail.com>",
+    "to": "Zhiang<hza8816415@gmail.com>",
       "subject": subject,
       "text": text})
 
