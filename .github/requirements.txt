@@ -2,3 +2,4 @@ yfinance
 pandas
 requests
 datetime
+pandas_market_calendars
