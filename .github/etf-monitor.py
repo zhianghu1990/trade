@@ -6,6 +6,8 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 from pandas.tseries.offsets import CustomBusinessDay
 import datetime
 import pandas_market_calendars as mcal
+from datetime import timezone
+
 
 def get_etf_prices(ticker_symbol):
     """
