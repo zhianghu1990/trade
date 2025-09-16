@@ -43,7 +43,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           # Add the 'requests' library needed for Mailgun API calls
-          pip install requests -r requirements.txt 
+          pip install requests -r .github/requirements.txt 
       
       - name: Run ETF monitor script
-        run: python etf-monitor.py.py
+        run: python .github/etf-monitor.py.py
