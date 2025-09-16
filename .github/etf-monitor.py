@@ -4,7 +4,7 @@ import os
 import requests
 from pandas.tseries.holiday import USFederalHolidayCalendar
 from pandas.tseries.offsets import CustomBusinessDay
-import datetime as dt
+import datetime
 
 def get_etf_prices(ticker_symbol):
     """
@@ -74,7 +74,7 @@ def is_trading_day():
     us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
 
     # Get today's date
-    today = dt.date.today()
+    today = datetime.date.today()
 
     # Check if today is a business day according to the US trading calendar
     return bool(len(pd.date_range(start=today, end=today, freq=us_bd)))
