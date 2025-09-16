@@ -13,7 +13,7 @@ on:
     # Since schedules are not guaranteed to be exact, running every 30 minutes
     # ensures you get price checks throughout the trading day without risking
     # exceeding the free minute limit.
-    - cron: '15 10-17 * * 1-5'
+    - cron: '15 13-20 * * 1-5'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
