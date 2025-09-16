@@ -105,9 +105,13 @@ def is_last_trading_day_of_month(market='NYSE'):
     print(f"Today: {today}, Last Trading Day of Month ({market}): {last_trading_day_of_month}")
 
     current_utc_time = datetime.datetime.now(timezone.utc)
-    target_utc_hour = 11 # 11 AM UTC
+    # runs 13 - 20:00 UTC, aka 7am - 14:00 PT.
+    target_utc_hour = 14 # 14 AM UTC 7 AM PT
+    force_start_utc_hour = 6 # 0 - 6 am UTC, 17 - 23 PM PST yesterday.
     
-    return today == last_trading_day_of_month and current_utc_time.hour < target_utc_hour
+    return (
+        (today == last_trading_day_of_month and current_utc_time.hour < target_utc_hour)
+        or current_utc_time.hour < force_start_utc_hour)
     
 symbols = ["VOO", "VGT", "MGK"]
 thresholds = [0.95, 0.9483, 0.9407]
