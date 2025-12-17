@@ -47,7 +47,7 @@ def send_message(subject,text):
   email_address = os.environ.get("EMAIL_ADDR")
   uri = os.environ.get("MAILGUN_URI")
   sender = os.environ.get("MAILGUN_SENDER")
-  print("uri = ", uri)
+  print("uri = ", uri[:4])
   return requests.post(
     uri,
     auth=("api", os.getenv('API_KEY', api_key)),
