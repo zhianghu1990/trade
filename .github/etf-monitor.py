@@ -139,11 +139,15 @@ if is_trading_day():
         alerts.append((symbols[i], current, hist_high, thresholds[i]))
     
     if should_send:
+      print("should send")
       send_alerts(tickers,alerts)
     elif is_last_trading_day_of_month():
+        print("sending for last month")
         subject = "Monthly Summary " + str(datetime.date.today())
         text = ""
         for i in range(len(symbols)):
             diff_now = (1.0 - currents[i] / highs[i]) * 100
             text = text + symbols[i] + f" Current price ${currents[i]:.2f} historical high ${highs[i]:.2f}. drop {diff_now:.2f}%\n"
-        send_message(subject,text)
+        print(send_message(subject,text))
+    else:
+        print("nothing to send")
