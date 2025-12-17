@@ -43,12 +43,14 @@ def get_etf_prices(ticker_symbol):
         return None, None
 
 def send_message(subject,text):
-    api_key = os.environ.get("API_KEY")
-    email_address = os.environ.get("EMAIL_ADDR")
+  api_key = os.environ.get("API_KEY")
+  email_address = os.environ.get("EMAIL_ADDR")
+  uri = os.environ.get("MAILGUN_URI")
+  sender = os.environ.get("MAILGUN_SENDER")
   return requests.post(
-    "https://api.mailgun.net/v3/sandboxe8cddc1d54854e26a7aba3550e8daa0d.mailgun.org/messages",
+    uri,
     auth=("api", os.getenv('API_KEY', api_key)),
-    data={"from": "Mailgun Sandbox <postmaster@sandboxe8cddc1d54854e26a7aba3550e8daa0d.mailgun.org>",
+    data={"from": sender,
     "to": email_address,
       "subject": subject,
       "text": text})
