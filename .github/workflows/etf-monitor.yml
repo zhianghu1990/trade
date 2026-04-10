@@ -1,5 +1,6 @@
 name: ETF Price Monitor
 
+# last updated: 04/10/2026
 # Controls when the workflow will run
 on:
   # Allows you to run this workflow manually from the Actions tab
